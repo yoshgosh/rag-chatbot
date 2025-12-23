@@ -1,0 +1,79 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [ develop, production ]
+
+jobs:
+  changes:
+    name: "detect changes"
+    runs-on: ubuntu-latest
+    outputs:
+      chat-api: ${{ steps.filter.outputs.chat-api }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            chat-api:
+              - 'apps/chat-api/**'
+              - '.github/workflows/ci.yml'
+
+  chat-api-format:
+    name: "chat-api: format"
+    needs: changes
+    if: ${{ needs.changes.outputs.chat-api == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chat-api
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v4
+      - name: "setup node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/chat-api/package-lock.json
+      - name: "install dependencies"
+        run: npm ci
+      - name: "check format"
+        run: npm run format:check
+
+  chat-api-lint:
+    name: "chat-api: lint"
+    needs: changes
+    if: ${{ needs.changes.outputs.chat-api == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chat-api
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v4
+      - name: "setup node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/chat-api/package-lock.json
+      - name: "install dependencies"
+        run: npm ci
+      - name: "run lint"
+        run: npm run lint
+
+  status-check:
+      name: "ci: status check"
+      needs:
+        - chat-api-format
+        - chat-api-lint
+      if: always()
+      runs-on: ubuntu-latest
+      steps:
+        - name: "check all results"
+          if: >-
+            contains(needs.*.result, 'failure') || 
+            contains(needs.*.result, 'cancelled')
+          run: exit 1

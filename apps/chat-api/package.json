@@ -12,7 +12,8 @@
     "test": "echo \"No tests yet...\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@azure/functions": "^4.0.0"
