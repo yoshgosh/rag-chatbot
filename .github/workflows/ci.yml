@@ -63,3 +63,17 @@ jobs:
         run: npm ci
       - name: "run lint"
         run: npm run lint
+
+  status-check:
+      name: "ci: status check"
+      needs:
+        - chat-api-format
+        - chat-api-lint
+      if: always()
+      runs-on: ubuntu-latest
+      steps:
+        - name: "check all results"
+          if: >-
+            contains(needs.*.result, 'failure') || 
+            contains(needs.*.result, 'cancelled')
+          run: exit 1
