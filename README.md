@@ -39,7 +39,7 @@ npm install
 func azure functionapp publish func-rcb-api-dev-jpe
 ```
 - 疎通確認
-    - https://func-rcb-api-dev-jpe.azurewebsites.net/api/health
+    - https://func-rcb-chat-api-dev-jpe.azurewebsites.net/api/health
     - want:
         ```json
         {"status":"ok","timestamp":"2025-12-23T11:19:25.023Z"}
