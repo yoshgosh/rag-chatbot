@@ -2,11 +2,11 @@ name: ci
 
 on:
   pull_request:
-    branches: [ develop, production ]
+    branches: [ main ]
 
 jobs:
   changes:
-    name: "detect changes"
+    name: "ci: detect changes"
     runs-on: ubuntu-latest
     outputs:
       chat-api: ${{ steps.filter.outputs.chat-api }}
