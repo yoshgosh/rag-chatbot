@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 env:
-  RESOURCE_GROUP_NAME: 'rg-rcb-dev-jpe'
+  RESOURCE_GROUP_NAME: 'rg-yosh-rcb-dev-jpe'
 
 jobs:
   infra-deploy:

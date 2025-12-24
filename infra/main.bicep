@@ -1,3 +1,6 @@
+@description('Organization name')
+param organizationName string = 'yosh'
+
 @description('Project name')
 param projectName string = 'rcb'
 
@@ -13,14 +16,14 @@ var uniqueId = uniqueString(resourceGroup().id)
 var shortUniqueId = take(uniqueId, 5)
 
 // common naming
-var lawName = 'law-${projectName}-${env}-${locationCode}'
-var docsStName = take('st${projectName}docs${env}${locationCode}${shortUniqueId}', 24)
+var lawName = 'law-${organizationName}-${projectName}-${env}-${locationCode}'
+var docsStName = take('st${organizationName}${projectName}docs${env}${locationCode}${shortUniqueId}', 24)
 
 // chat-api naming
-var chatApiAppiName = 'appi-${projectName}-chat-api-${env}-${locationCode}'
-var chatApiStName = take('st${projectName}capi${env}${locationCode}${shortUniqueId}', 24)
-var chatApiAspName = 'asp-${projectName}-chat-api-${env}-${locationCode}'
-var chatApiFuncName = 'func-${projectName}-chat-api-${env}-${locationCode}'
+var chatApiAppiName = 'appi-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
+var chatApiStName = take('st${organizationName}${projectName}capi${env}${locationCode}${shortUniqueId}', 24)
+var chatApiAspName = 'asp-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
+var chatApiFuncName = 'func-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 
 // common resources
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
