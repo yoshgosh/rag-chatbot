@@ -11,9 +11,6 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  RESOURCE_GROUP_NAME: 'rg-yosh-rcb-dev-jpe'
-
 jobs:
   infra-deploy:
     name: "infra: deploy"
@@ -34,7 +31,7 @@ jobs:
         id: deploy
         uses: azure/arm-deploy@v2
         with:
-          resourceGroupName: ${{ env.RESOURCE_GROUP_NAME }}
+          resourceGroupName: ${{ vars.RESOURCE_GROUP_NAME }}
           template: infra/main.bicep
           parameters: infra/params/dev.bicepparam
 
