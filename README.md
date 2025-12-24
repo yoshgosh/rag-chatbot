@@ -1,4 +1,5 @@
 # RAGチャットボット
+Azure で構築するRAGチャットボット
 ## 手動デプロイ
 ### ツールのインストール
 - [Azure CLI](https://learn.microsoft.com/ja-jp/cli/azure/install-azure-cli)
