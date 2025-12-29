@@ -15,7 +15,6 @@ export async function health(
   };
 }
 
-// テストコメント
 app.http('health', {
   methods: ['GET'],
   authLevel: 'anonymous',
