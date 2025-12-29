@@ -25,6 +25,9 @@ var chatApiStName = take('st${organizationName}${projectName}capi${env}${locatio
 var chatApiAspName = 'asp-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 var chatApiFuncName = 'func-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 
+// search naming
+var searchName = 'srch-${organizationName}-${projectName}-${env}-${locationCode}'
+
 // common resources
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: lawName
@@ -37,6 +40,15 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
+}
+
+// AI Search
+resource search 'Microsoft.Search/searchServices@2023-11-01' = {
+ name: searchName
+  location: location
+  sku: {
+    name: 'free'
+  }
 }
 
 // chat-api resources
@@ -99,6 +111,8 @@ resource chatApi 'Microsoft.Web/sites@2024-11-01' = {
         { name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING', value: 'DefaultEndpointsProtocol=https;AccountName=${chatApiSt.name};AccountKey=${chatApiSt.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}' }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: chatApiAppi.properties.ConnectionString }
         { name: 'DATA_STORAGE_CONNECTION_STRING', value: 'DefaultEndpointsProtocol=https;AccountName=${docsSt.name};AccountKey=${docsSt.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}' }
+        { name: 'AZURE_SEARCH_SERVICE_ENDPOINT', value: 'https://${search.name}.search.windows.net' }
+        { name: 'AZURE_SEARCH_ADMIN_KEY', value: search.listAdminKeys().primaryKey }
       ]
     }
   }
