@@ -67,20 +67,20 @@ resource openai 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
 }
 
-// モデルデプロイ: GPT-4.1
-resource gpt41 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+// モデルデプロイ: GPT-4.1-mini
+resource gpt41mini 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: openai
-  name: 'gpt-4.1'
+  name: 'gpt-4.1-mini'
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4.1'
+      name: 'gpt-4.1-mini'
       version: '2025-04-14'
     }
   }
   sku: {
     name: 'GlobalStandard'
-    capacity: 10
+    capacity: 50
   }
 }
 
@@ -161,7 +161,7 @@ resource chatApi 'Microsoft.Web/sites@2024-11-01' = {
         { name: 'AZURE_SEARCH_ADMIN_KEY', value: search.listAdminKeys().primaryKey }
         { name: 'AZURE_OPENAI_ENDPOINT', value: openai.properties.endpoint }
         { name: 'AZURE_OPENAI_API_KEY', value: openai.listKeys().key1 }
-        { name: 'AZURE_OPENAI_CHAT_DEPLOYMENT', value: gpt41.name }
+        { name: 'AZURE_OPENAI_CHAT_DEPLOYMENT', value: gpt41mini.name }
         { name: 'AZURE_OPENAI_EMBEDDING_DEPLOYMENT', value: embedding.name }
       ]
     }
