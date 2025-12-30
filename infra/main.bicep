@@ -88,6 +88,9 @@ resource gpt41mini 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01'
 resource embedding 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: openai
   name: 'text-embedding-3-small'
+  dependsOn: [
+    gpt41mini
+  ]
   properties: {
     model: {
       format: 'OpenAI'
