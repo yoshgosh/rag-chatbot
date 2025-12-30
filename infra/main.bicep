@@ -28,6 +28,9 @@ var chatApiFuncName = 'func-${organizationName}-${projectName}-chat-api-${env}-$
 // search naming
 var searchName = 'srch-${organizationName}-${projectName}-${env}-${locationCode}'
 
+// openai naming
+var openaiName = 'oai-${organizationName}-${projectName}-${env}-${locationCode}'
+
 // common resources
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: lawName
@@ -44,10 +47,49 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 
 // AI Search
 resource search 'Microsoft.Search/searchServices@2023-11-01' = {
- name: searchName
+  name: searchName
   location: location
   sku: {
     name: 'free'
+  }
+}
+
+// Azure OpenAI Service 本体
+resource openai 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
+  name: openaiName
+  location: location
+  kind: 'OpenAI'
+  sku: {
+    name: 'S0'
+  }
+  properties: {
+    customSubDomainName: openaiName
+  }
+}
+
+// モデルデプロイ: GPT-4.1
+resource gpt41 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+  parent: openai
+  name: 'gpt-4.1'
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-4.1'
+      version: '2025-04-14'
+    }
+  }
+}
+
+// モデルデプロイ: text-embedding-3-small
+resource embedding 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+  parent: openai
+  name: 'text-embedding-3-small'
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'text-embedding-3-small'
+      version: '1'
+    }
   }
 }
 
@@ -113,6 +155,10 @@ resource chatApi 'Microsoft.Web/sites@2024-11-01' = {
         { name: 'DATA_STORAGE_CONNECTION_STRING', value: 'DefaultEndpointsProtocol=https;AccountName=${docsSt.name};AccountKey=${docsSt.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}' }
         { name: 'AZURE_SEARCH_SERVICE_ENDPOINT', value: 'https://${search.name}.search.windows.net' }
         { name: 'AZURE_SEARCH_ADMIN_KEY', value: search.listAdminKeys().primaryKey }
+        { name: 'AZURE_OPENAI_ENDPOINT', value: openai.properties.endpoint }
+        { name: 'AZURE_OPENAI_API_KEY', value: openai.listKeys().key1 }
+        { name: 'AZURE_OPENAI_CHAT_DEPLOYMENT', value: gpt41.name }
+        { name: 'AZURE_OPENAI_EMBEDDING_DEPLOYMENT', value: embedding.name }
       ]
     }
   }
