@@ -55,27 +55,75 @@ resource search 'Microsoft.Search/searchServices@2023-11-01' = {
 }
 
 // AI Search Index
-resource searchIndex 'Microsoft.Search/searchServices/indexes@2023-11-01' = {
+resource searchIndex 'Microsoft.Search/searchServices/indexes@2025-05-01' = {
   parent: search
   name: 'rag-index'
   properties: {
     fields: [
-      { name: 'id', type: 'Edm.String', key: true, searchable: true, filterable: false, retrievable: true, stored: true, analyzer: 'keyword' }
-      { name: 'content', type: 'Edm.String', searchable: true, filterable: false, retrievable: true, stored: true, analyzer: 'standard.lucene' }
-      { name: 'title', type: 'Edm.String', searchable: true, filterable: false, retrievable: true, stored: true }
-      { name: 'parentId', type: 'Edm.String', searchable: false, filterable: true, retrievable: true, stored: true }
-      { name: 'contentVector', type: 'Collection(Edm.Single)', dimensions: 1536, searchable: true, retrievable: false, stored: true, vectorSearchProfile: 'vector-profile' }
+      {
+        name: 'id'
+        type: 'Edm.String'
+        key: true
+        searchable: true
+        filterable: false
+        retrievable: true
+        stored: true
+        analyzer: 'keyword'
+      }
+      {
+        name: 'content'
+        type: 'Edm.String'
+        searchable: true
+        filterable: false
+        retrievable: true
+        stored: true
+        analyzer: 'ja.lucene'
+      }
+      {
+        name: 'title'
+        type: 'Edm.String'
+        searchable: true
+        filterable: false
+        retrievable: true
+        stored: true
+      }
+      {
+        name: 'parentId'
+        type: 'Edm.String'
+        searchable: false
+        filterable: true
+        retrievable: true
+        stored: true
+      }
+      {
+        name: 'contentVector'
+        type: 'Collection(Edm.Single)'
+        dimensions: 1536
+        searchable: true
+        retrievable: false
+        stored: true
+        vectorSearchProfile: 'vector-profile'
+      }
     ]
     vectorSearch: {
       algorithms: [
         {
           name: 'vector-config'
           kind: 'hnsw'
-          hnswParameters: { metric: 'cosine', m: 4, efConstruction: 400, efSearch: 500 }
+          hnswParameters: {
+            metric: 'cosine'
+            m: 4
+            efConstruction: 400
+            efSearch: 500
+          }
         }
       ]
       profiles: [
-        { name: 'vector-profile', algorithm: 'vector-config', vectorizer: 'openai-vectorizer' }
+        {
+          name: 'vector-profile'
+          algorithm: 'vector-config'
+          vectorizer: 'openai-vectorizer'
+        }
       ]
       vectorizers: [
         {
@@ -89,6 +137,9 @@ resource searchIndex 'Microsoft.Search/searchServices/indexes@2023-11-01' = {
           }
         }
       ]
+    }
+    corsOptions: {
+      allowedOrigins: [ '*' ]
     }
   }
 }
