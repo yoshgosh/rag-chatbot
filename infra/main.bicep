@@ -80,6 +80,7 @@ resource gpt41 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   }
   sku: {
     name: 'GlobalStandard'
+    capacity: 10
   }
 }
 
@@ -93,10 +94,6 @@ resource embedding 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01'
       name: 'text-embedding-3-small'
       version: '1'
     }
-  }
-  sku: {
-    name: 'GlobalStandard'
-    capacity: 10
   }
 }
 
