@@ -39,7 +39,7 @@
             "retrievable": false,
             "stored": true,
             "dimensions": 1536,
-            "vectorSearchProfile": "vector-profile"
+            "vectorSearchProfileName": "vector-profile"
         }
     ],
     "corsOptions": {
@@ -64,8 +64,8 @@
         "profiles": [
             {
                 "name": "vector-profile",
-                "algorithm": "vector-config",
-                "vectorizer": "openai-vectorizer"
+                "algorithmConfigurationName": "vector-config",
+                "vectorizerName": "openai-vectorizer"
             }
         ],
         "vectorizers": [
@@ -74,7 +74,7 @@
                 "kind": "azureOpenAI",
                 "azureOpenAIParameters": {
                     "resourceUri": "__AOAI_ENDPOINT__",
-                    "deploymentId": "__EMBEDDING_DEPLOYMENT__",
+                    "deploymentId": "__AOAI_EMBEDDING_DEPLOYMENT__",
                     "apiKey": "__AOAI_KEY__",
                     "modelName": "text-embedding-3-small"
                 }
