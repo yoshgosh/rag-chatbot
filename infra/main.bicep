@@ -15,37 +15,52 @@ var locationCode = 'jpe'
 var uniqueId = uniqueString(resourceGroup().id)
 var shortUniqueId = take(uniqueId, 5)
 
-// common naming
+// ----- naming -----
+// logging
 var lawName = 'law-${organizationName}-${projectName}-${env}-${locationCode}'
-var docsStName = take('st${organizationName}${projectName}docs${env}${locationCode}${shortUniqueId}', 24)
 
-// chat-api naming
+// storage
+var docsStName = take('st${organizationName}${projectName}docs${env}${locationCode}${shortUniqueId}', 24)
+var docsContainerName = 'documents'
+
+// search
+var searchName = 'srch-${organizationName}-${projectName}-${env}-${locationCode}'
+
+// openai
+var openaiName = 'oai-${organizationName}-${projectName}-${env}-${locationCode}'
+
+// chat-api
 var chatApiAppiName = 'appi-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 var chatApiStName = take('st${organizationName}${projectName}capi${env}${locationCode}${shortUniqueId}', 24)
+var chatApiContainerName = 'api-package'
 var chatApiAspName = 'asp-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 var chatApiFuncName = 'func-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 
-// search naming
-var searchName = 'srch-${organizationName}-${projectName}-${env}-${locationCode}'
-
-// openai naming
-var openaiName = 'oai-${organizationName}-${projectName}-${env}-${locationCode}'
-
-// common resources
+// ----- resources -----
+// logging
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: lawName
   location: location
   properties: { sku: { name: 'PerGB2018' } }
 }
 
+// storage
 resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: docsStName
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
+  resource blobServices 'blobServices' existing = {
+    name: 'default'
+  }
 }
 
-// AI Search
+resource docsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: docsSt::blobServices
+  name: docsContainerName
+}
+
+// search
 resource search 'Microsoft.Search/searchServices@2023-11-01' = {
   name: searchName
   location: location
@@ -54,7 +69,7 @@ resource search 'Microsoft.Search/searchServices@2023-11-01' = {
   }
 }
 
-// Azure OpenAI Service 本体
+// openai
 resource openai 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: openaiName
   location: location
@@ -67,7 +82,6 @@ resource openai 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
 }
 
-// モデルデプロイ: GPT-4.1-mini
 resource gpt41mini 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: openai
   name: 'gpt-4.1-mini'
@@ -84,7 +98,6 @@ resource gpt41mini 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01'
   }
 }
 
-// モデルデプロイ: text-embedding-3-small
 resource embedding 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: openai
   name: 'text-embedding-3-small'
@@ -104,7 +117,7 @@ resource embedding 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01'
   }
 }
 
-// chat-api resources
+// chat-api
 resource chatApiAppi 'Microsoft.insights/components@2020-02-02' = {
   name: chatApiAppiName
   location: location
@@ -120,6 +133,14 @@ resource chatApiSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
+  resource blobServices 'blobServices' existing = {
+    name: 'default'
+  }
+}
+
+resource chatApiContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: chatApiSt::blobServices
+  name: chatApiContainerName
 }
 
 resource chatApiAsp 'Microsoft.Web/serverfarms@2024-11-01' = {
@@ -145,7 +166,7 @@ resource chatApi 'Microsoft.Web/sites@2024-11-01' = {
       deployment: {
         storage: {
           type: 'blobcontainer'
-          value: '${chatApiSt.properties.primaryEndpoints.blob}api-package'
+          value: '${chatApiSt.properties.primaryEndpoints.blob}${chatApiContainerName}'
           authentication: { 
             type: 'StorageAccountConnectionString' 
             storageAccountConnectionStringName: 'DEPLOYMENT_STORAGE_CONNECTION_STRING' 
@@ -173,13 +194,6 @@ resource chatApi 'Microsoft.Web/sites@2024-11-01' = {
       ]
     }
   }
-}
-
-resource containerSys 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
-  name: '${chatApiSt.name}/default/api-package'
-}
-resource containerData 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
-  name: '${docsSt.name}/default/documents'
 }
 
 output chatApiFuncName string = chatApi.name
