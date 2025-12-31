@@ -123,6 +123,22 @@ class SearchSkillsetClient {
     }
 }
 
+class SearchIndexerClient {
+    private readonly rest: SearchRestClient;
+
+    public constructor(rest: SearchRestClient) {
+        this.rest = rest;
+    }
+
+    public async put(indexerDefinition: any): Promise<void> {
+        const name = indexerDefinition?.name;
+        if (!name || typeof name !== "string") {
+            throw new Error('Indexer definition is missing "name"');
+        }
+        await this.rest.put("indexers", name, indexerDefinition);
+    }
+}
+
 async function applyIndexes(
     dirPath: string,
     indexClient: SearchIndexClient,
@@ -204,6 +220,33 @@ async function applySkillsets(
     return count;
 }
 
+async function applyIndexers(
+    dirPath: string,
+    indexerClient: SearchIndexerClient,
+    replacer: Replacer
+): Promise<number> {
+    const files = await listJsonFiles(dirPath);
+
+    if (files.length === 0) {
+        console.log(`[search] indexers: skip (no files in ${dirPath})`);
+        return 0;
+    }
+
+    let count = 0;
+    for (const filePath of files) {
+        const raw = await readFile(filePath, "utf-8");
+        const replaced = replacer.replace(raw);
+        const def = JSON.parse(replaced);
+
+        await indexerClient.put(def);
+
+        console.log(`[search] indexers: applied ${def.name} (${path.basename(filePath)})`);
+        count += 1;
+    }
+
+    return count;
+}
+
 async function main(): Promise<void> {
     const searchEndpoint = requireEnv("AZURE_SEARCH_SERVICE_ENDPOINT");
     const searchAdminKey = requireEnv("AZURE_SEARCH_ADMIN_KEY");
@@ -211,8 +254,9 @@ async function main(): Promise<void> {
 
     const schemasDir = path.resolve(process.cwd(), "schemas");
     const datasourcesDir = path.join(schemasDir, "datasources");
-    const skillsetsDir = path.join(schemasDir, "skillsets");
     const indexesDir = path.join(schemasDir, "indexes");
+    const skillsetsDir = path.join(schemasDir, "skillsets");
+    const indexersDir = path.join(schemasDir, "indexers");
 
     const replacer = new Replacer({
         "__AOAI_ENDPOINT__": trimTrailingSlash(requireEnv("AZURE_OPENAI_ENDPOINT")),
@@ -226,13 +270,15 @@ async function main(): Promise<void> {
     const datasourceClient = new SearchDatasourceClient(rest);
     const indexClient = new SearchIndexClient(rest);
     const skillsetClient = new SearchSkillsetClient(rest);
+    const indexerClient = new SearchIndexerClient(rest);
 
     const appliedDatasources = await applyDatasources(datasourcesDir, datasourceClient, replacer);
     const appliedIndexes = await applyIndexes(indexesDir, indexClient, replacer);
     const appliedSkillsets = await applySkillsets(skillsetsDir, skillsetClient, replacer);
+    const appliedIndexers = await applyIndexers(indexersDir, indexerClient, replacer);
 
     console.log(
-        `[search] done. datasources=${appliedDatasources}, indexes=${appliedIndexes}, skillsets=${appliedSkillsets}`
+        `[search] done. datasources=${appliedDatasources}, indexes=${appliedIndexes}, skillsets=${appliedSkillsets}, indexers=${appliedIndexers}`
     );
 }
 

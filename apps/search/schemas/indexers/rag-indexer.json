@@ -1,0 +1,28 @@
+{
+    "name": "rag-indexer",
+    "dataSourceName": "rag-datasource",
+    "skillsetName": "chunk-and-embedding-skillset",
+    "targetIndexName": "rag-index",
+    "parameters": {
+        "configuration": {
+            "parsingMode": "default",
+            "dataToExtract": "contentAndMetadata"
+        }
+    },
+    "fieldMappings": [
+        {
+            "sourceFieldName": "metadata_storage_name",
+            "targetFieldName": "title"
+        },
+        {
+            "sourceFieldName": "metadata_storage_path",
+            "targetFieldName": "parentId",
+            "mappingFunction": {
+                "name": "base64Encode",
+                "parameters": {
+                    "useHttpServerUtilityUrlTokenEncode": false
+                }
+            }
+        }
+    ]
+}
