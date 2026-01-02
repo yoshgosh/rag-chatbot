@@ -13,12 +13,6 @@ export default defineConfig([
 
     {
         files: ['src/**/*.ts'],
-        languageOptions: {
-            parserOptions: {
-                projectService: true,
-                tsconfigRootDir: import.meta.dirname,
-            },
-        },
         rules: {
             // any の使用はエラーではなく警告に変更
             '@typescript-eslint/no-explicit-any': 'warn',
