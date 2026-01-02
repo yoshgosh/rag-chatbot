@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       chat-api: ${{ steps.filter.outputs.chat-api }}
+      chat-web: ${{ steps.filter.outputs.chat-web }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -18,6 +19,9 @@ jobs:
           filters: |
             chat-api:
               - 'apps/chat-api/**'
+              - '.github/workflows/ci.yml'
+            chat-web:
+              - 'apps/chat-web/**'
               - '.github/workflows/ci.yml'
 
   chat-api-format:
@@ -64,11 +68,57 @@ jobs:
       - name: "run lint"
         run: npm run lint
 
+  chat-web-format:
+    name: "chat-web: format"
+    needs: changes
+    if: ${{ needs.changes.outputs.chat-web == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chat-web
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v4
+      - name: "setup node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/chat-web/package-lock.json
+      - name: "install dependencies"
+        run: npm ci
+      - name: "check format"
+        run: npm run format:check
+
+  chat-web-lint:
+    name: "chat-web: lint"
+    needs: changes
+    if: ${{ needs.changes.outputs.chat-web == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/chat-web
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v4
+      - name: "setup node"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/chat-web/package-lock.json
+      - name: "install dependencies"
+        run: npm ci
+      - name: "run lint"
+        run: npm run lint
+
   status-check:
       name: "ci: status check"
       needs:
         - chat-api-format
         - chat-api-lint
+        - chat-web-format
+        - chat-web-lint
       if: always()
       runs-on: ubuntu-latest
       steps:

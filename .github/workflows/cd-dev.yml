@@ -13,6 +13,29 @@ permissions:
     contents: read
 
 jobs:
+    changes:
+        name: "cd: detect changes"
+        runs-on: ubuntu-latest
+        outputs:
+            search: ${{ steps.filter.outputs.search }}
+            chat-api: ${{ steps.filter.outputs.chat-api }}
+            chat-web: ${{ steps.filter.outputs.chat-web }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dorny/paths-filter@v3
+              id: filter
+              with:
+                  filters: |
+                      search:
+                          - 'apps/search/**'
+                          - '.github/workflows/cd-dev.yml'
+                      chat-api:
+                          - 'apps/chat-api/**'
+                          - '.github/workflows/cd-dev.yml'
+                      chat-web:
+                          - 'apps/chat-web/**'
+                          - '.github/workflows/cd-dev.yml'
+
     infra-deploy:
         name: "infra: deploy"
         runs-on: ubuntu-latest
@@ -46,7 +69,10 @@ jobs:
 
     search-apply:
         name: "search: apply"
-        needs: infra-deploy
+        needs:
+            - changes
+            - infra-deploy
+        if: ${{ needs.changes.outputs.search == 'true' }}
         runs-on: ubuntu-latest
         environment: dev
         steps:
@@ -100,7 +126,9 @@ jobs:
     chat-api-deploy:
         name: "chat-api: deploy"
         needs:
+            - changes
             - infra-deploy
+        if: ${{ needs.changes.outputs.chat-api == 'true' }}
         runs-on: ubuntu-latest
         environment: dev
         steps:
@@ -136,7 +164,9 @@ jobs:
     chat-web-deploy:
         name: "chat-web: deploy"
         needs:
+            - changes
             - infra-deploy
+        if: ${{ needs.changes.outputs.chat-web == 'true' }}
         runs-on: ubuntu-latest
         environment: dev
         steps:
