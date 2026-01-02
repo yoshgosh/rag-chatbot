@@ -1,8 +1,10 @@
 # chat-api
+
 Azure Functions で構築されたチャット API サービスです。
 Azure OpenAI と Azure AI Search を利用して、チャットボットの応答を生成します。
 
 ## ローカル開発
+
 （`cd apps/chat-api` でサービスディレクトリに移動して作業する。）
 
 - 環境変数の設定
