@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Document } from './domain/document.js';
 import { answer as callAnswer } from './api/answer.js';
 
+// テストコメント
+
 type QAItem = {
     id: number;
     query: string;
