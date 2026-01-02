@@ -24,6 +24,7 @@ jobs:
             TEXT_EMBEDDING_3_SMALL_DEPLOYMENT_NAME: ${{ steps.deploy.outputs.textEmbedding3SmallDeploymentName }}
             DOCS_STORAGE_ACCOUNT_NAME: ${{ steps.deploy.outputs.docsStorageAccountName }}
             CHAT_WEB_STAPP_NAME: ${{ steps.deploy.outputs.chatWebStappName }}
+            CHAT_API_DEFAULT_HOST_NAME: ${{ steps.deploy.outputs.chatApiDefaultHostName }}
         steps:
             - name: "checkout"
               uses: actions/checkout@v4
@@ -165,6 +166,8 @@ jobs:
 
             - name: "deploy static web app"
               uses: Azure/static-web-apps-deploy@v1
+              env:
+                  VITE_API_BASE_URL: "https://${{ needs.infra-deploy.outputs.CHAT_API_DEFAULT_HOST_NAME }}/api"
               with:
                   azure_static_web_apps_api_token: ${{ steps.get_swa_token.outputs.token }}
                   action: "upload"

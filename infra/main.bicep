@@ -214,14 +214,6 @@ resource chatWeb 'Microsoft.Web/staticSites@2024-11-01' = {
   }
 }
 
-resource chatWebAppSettings 'Microsoft.Web/staticSites/config@2024-11-01' = {
-  name: 'appsettings'
-  parent: chatWeb
-  properties: {
-    VITE_API_BASE_URL: 'https://${chatApi.properties.defaultHostName}/api'
-  }
-}
-
 // ----- outputs -----
 output chatApiFuncName string = chatApi.name
 output searchServiceName string = search.name
@@ -229,3 +221,4 @@ output openaiAccountName string = openai.name
 output textEmbedding3SmallDeploymentName string = textEmbedding3Small.name
 output docsStorageAccountName string = docsSt.name
 output chatWebStappName string = chatWeb.name
+output chatApiDefaultHostName string = chatApi.properties.defaultHostName
