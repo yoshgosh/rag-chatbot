@@ -11,9 +11,9 @@ export function buildAnswerPrompt(query: string, docs: Document[]): string {
             ? '（関連資料は取得できませんでした。）'
             : docs
                   .map((doc, i) => {
-                      return `[${i}]\n${doc.content}`;
+                      return `[${i}]${doc.title}\n${doc.content}`;
                   })
-                  .join('\n\n---\n\n');
+                  .join('\n\n');
 
     return [
         '## 指示',
