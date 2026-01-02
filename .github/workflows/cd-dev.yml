@@ -27,13 +27,10 @@ jobs:
                   filters: |
                       search:
                           - 'apps/search/**'
-                          - '.github/workflows/cd-dev.yml'
                       chat-api:
                           - 'apps/chat-api/**'
-                          - '.github/workflows/cd-dev.yml'
                       chat-web:
                           - 'apps/chat-web/**'
-                          - '.github/workflows/cd-dev.yml'
 
     infra-deploy:
         name: "infra: deploy"
