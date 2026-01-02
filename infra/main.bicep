@@ -181,6 +181,8 @@ resource chatApi 'Microsoft.Web/sites@2024-11-01' = {
       cors: {
         allowedOrigins: [
           'https://portal.azure.com'
+          'http://localhost:5173'
+          'https://${chatWeb.properties.defaultHostname}'
         ]
       }
       appSettings: [
@@ -209,6 +211,14 @@ resource chatWeb 'Microsoft.Web/staticSites@2024-11-01' = {
   properties: {
     stagingEnvironmentPolicy: 'Enabled'
     allowConfigFileUpdates: true
+  }
+}
+
+resource chatWebAppSettings 'Microsoft.Web/staticSites/config@2024-11-01' = {
+  name: 'appsettings'
+  parent: chatWeb
+  properties: {
+    VITE_API_BASE_URL: 'https://${chatApi.properties.defaultHostName}/api'
   }
 }
 
