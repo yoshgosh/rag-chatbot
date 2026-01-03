@@ -67,7 +67,7 @@ export function InputBox({
                         type="button"
                         onClick={handleSend}
                         disabled={!canSubmit || isLoading}
-                        className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-black text-bg disabled:opacity-50"
+                        className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-button text-bg disabled:opacity-50"
                     ></button>
                 </div>
             </div>

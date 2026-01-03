@@ -6,12 +6,22 @@ type ChatViewProps = {
     messages: Message[];
     selectedMessageId: string | null;
     onSelectMessage: (id: string) => void;
+    containerRef: React.RefObject<HTMLDivElement>;
+    contentRef: React.RefObject<HTMLDivElement>;
+    registerElementRef: (id: string) => (el: HTMLElement | null) => void;
 };
 
-export function ChatView({ messages, selectedMessageId, onSelectMessage }: ChatViewProps) {
+export function ChatView({
+    messages,
+    selectedMessageId,
+    onSelectMessage,
+    containerRef,
+    contentRef,
+    registerElementRef,
+}: ChatViewProps) {
     return (
-        <div className="h-full overflow-auto">
-            <ul className="space-y-4 p-4">
+        <div className="h-full overflow-auto" ref={containerRef}>
+            <div className="space-y-4 p-4" ref={contentRef}>
                 {messages.map((message) => {
                     const shouldSetSelect = message.type === 'assistant';
                     return (
@@ -22,10 +32,11 @@ export function ChatView({ messages, selectedMessageId, onSelectMessage }: ChatV
                             setAsSelected={
                                 shouldSetSelect ? () => onSelectMessage(message.id) : () => {}
                             }
+                            registerElementRef={registerElementRef(message.id)}
                         />
                     );
                 })}
-            </ul>
+            </div>
         </div>
     );
 }
@@ -34,13 +45,15 @@ function Message({
     message,
     isSelected,
     setAsSelected,
+    registerElementRef,
 }: {
     message: Message;
     isSelected: boolean;
     setAsSelected: () => void;
+    registerElementRef: (el: HTMLElement | null) => void;
 }) {
     return (
-        <div className="mx-auto w-full max-w-4xl">
+        <div className="mx-auto w-full max-w-4xl" ref={registerElementRef}>
             {message.type === 'user' ? (
                 <UserMessage message={message} />
             ) : message.type === 'assistant' ? (

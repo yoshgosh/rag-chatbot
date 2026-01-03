@@ -9,6 +9,8 @@
 
     --color-border-default: #d4d4d4;
     --color-border-muted-value: #ececec;
+
+    --color-button-value: #000000;
 }
 
 @theme inline {
@@ -20,6 +22,8 @@
 
     --color-border: var(--color-border-default);
     --color-border-muted: var(--color-border-muted-value);
+
+    --color-button: var(--color-button-value);
 }
 
 body {

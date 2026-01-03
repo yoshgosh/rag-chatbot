@@ -5,12 +5,15 @@ import { DocsView } from './components/DocsView';
 import { answer } from './api/answer.js';
 import type { AssistantMessage, Message } from './domain/message.js';
 import type { Document } from './domain/document.js';
+import { useScrollRegistry } from './hooks/useScrollRegistry';
 
 export default function App() {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [selectedMessageId, setSelectedMessageId] = useState<string>('');
+
+    const { containerRef, contentRef, registerElementRef, scrollToElement } = useScrollRegistry();
 
     const canSubmit = !isLoading && inputText.trim().length > 0;
 
@@ -38,6 +41,7 @@ export default function App() {
         };
 
         setMessages((prev) => [...prev, userMessage]);
+        scrollToElement(userMessage.id, { behavior: 'smooth', align: true, margin: 16 });
         setInputText('');
         setIsLoading(true);
 
@@ -74,6 +78,9 @@ export default function App() {
                             messages={messages}
                             selectedMessageId={selectedMessageId}
                             onSelectMessage={setSelectedMessageId}
+                            containerRef={containerRef}
+                            contentRef={contentRef}
+                            registerElementRef={registerElementRef}
                         />
                         <div className="pointer-events-none absolute bottom-0 inset-x-0 w-full h-8 bg-linear-to-b from-transparent to-bg" />
                     </div>
