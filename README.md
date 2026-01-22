@@ -83,7 +83,7 @@ flowchart LR
     
 1. リソースグループの作成
     - リソースグループを作成
-    - 補足：`<resourceGroupName>` は `rg-yosh-rcb-dev-jpe` のように命名する。
+    - 補足：`<resourceGroupName>` は `rg-yosh-rcb-dev-jpe` のように命名するとよい。
     - `resourceGroupName` をメモする。
     
     ```bash
@@ -92,7 +92,7 @@ flowchart LR
     
 1. アプリの作成
     - アプリを作成
-    - 補足：`<displayName>` は `gh-actions-yosh-rcb-dev-jpe` のように命名する。
+    - 補足：`<displayName>` は `gh-actions-yosh-rcb-dev-jpe` のように命名するとよい。
     - 出力から `appId` をメモする。
     
     ```bash
@@ -142,7 +142,7 @@ flowchart LR
     - variables
         
         ```bash
-        RESOURCE_GROUP_NAME=<resourceGroupName>
+        AZURE_RESOURCE_GROUP_NAME=<resourceGroupName>
         ```
         
 
