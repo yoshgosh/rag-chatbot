@@ -56,6 +56,8 @@ var chatApiAspName = 'asp-${organizationName}-${projectName}-chat-api-${env}-${l
 var chatApiFuncName = 'func-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 var chatApiVnetName = 'vnet-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 var chatApiSubnetName = 'snet-chat-api'
+var chatApiNatName = 'nat-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
+var chatApiNatPublicIpName = 'pip-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 
 // chat-web
 var chatWebName = 'stapp-${organizationName}-${projectName}-chat-web-${env}-${locationCode}'
@@ -78,13 +80,14 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     networkAcls: {
       bypass: 'AzureServices'
       defaultAction: 'Deny'
-      ipRules: storageIpWhitelistRules
-      virtualNetworkRules: [
-        {
-          id: chatApiSubnet.id
-          action: 'Allow'
-        }
-      ]
+      ipRules: concat(
+        storageIpWhitelistRules,
+        [
+          {
+            value: chatApiNatPublicIp.properties.ipAddress
+          }
+        ]
+      )
     }
   }
   resource blobServices 'blobServices' existing = {
@@ -95,6 +98,33 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 resource docsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: docsSt::blobServices
   name: docsContainerName
+}
+
+resource chatApiNatPublicIp 'Microsoft.Network/publicIPAddresses@2023-09-01' = {
+  name: chatApiNatPublicIpName
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+    publicIPAddressVersion: 'IPv4'
+  }
+}
+
+resource chatApiNat 'Microsoft.Network/natGateways@2023-09-01' = {
+  name: chatApiNatName
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIpAddresses: [
+      {
+        id: chatApiNatPublicIp.id
+      }
+    ]
+  }
 }
 
 resource chatApiVnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
@@ -114,17 +144,15 @@ resource chatApiSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-09-01' = 
   name: chatApiSubnetName
   properties: {
     addressPrefix: chatApiSubnetAddressPrefix
+    natGateway: {
+      id: chatApiNat.id
+    }
     delegations: [
       {
         name: 'chatApiDelegation'
         properties: {
           serviceName: 'Microsoft.App/environments'
         }
-      }
-    ]
-    serviceEndpoints: [
-      {
-        service: 'Microsoft.Storage'
       }
     ]
   }
