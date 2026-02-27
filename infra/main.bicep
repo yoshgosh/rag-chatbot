@@ -12,8 +12,26 @@ param env string
 param location string = 'japaneast'
 var locationCode = 'jpe'
 
+@description('IP whitelist (CIDR) for inbound access restrictions, e.g. 203.0.113.10/32')
+param ipWhitelist array = []
+
+@description('VNet address prefix for chat-api integration')
+param chatApiVnetAddressPrefix string = '10.20.0.0/16'
+
+@description('Subnet address prefix for chat-api integration')
+param chatApiSubnetAddressPrefix string = '10.20.1.0/24'
+
 var uniqueId = uniqueString(resourceGroup().id)
 var shortUniqueId = take(uniqueId, 5)
+var ipWhitelistRules = [for ip in ipWhitelist: {
+  value: ip
+}]
+var chatApiIpRestrictions = [for ip in ipWhitelist: {
+  ipAddress: ip
+  action: 'Allow'
+  priority: 100 + indexOf(ipWhitelist, ip)
+  name: 'allow-${replace(replace(ip, '.', '-'), '/', '-')}'
+}]
 
 // ----- naming -----
 // logging
@@ -35,6 +53,8 @@ var chatApiStName = take('st${organizationName}${projectName}capi${env}${locatio
 var chatApiContainerName = 'api-package'
 var chatApiAspName = 'asp-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
 var chatApiFuncName = 'func-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
+var chatApiVnetName = 'vnet-${organizationName}-${projectName}-chat-api-${env}-${locationCode}'
+var chatApiSubnetName = 'snet-chat-api'
 
 // chat-web
 var chatWebName = 'stapp-${organizationName}-${projectName}-chat-web-${env}-${locationCode}'
@@ -53,6 +73,19 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
+  properties: {
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Deny'
+      ipRules: ipWhitelistRules
+      virtualNetworkRules: [
+        {
+          id: chatApiSubnet.id
+          action: 'Allow'
+        }
+      ]
+    }
+  }
   resource blobServices 'blobServices' existing = {
     name: 'default'
   }
@@ -61,6 +94,39 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 resource docsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: docsSt::blobServices
   name: docsContainerName
+}
+
+resource chatApiVnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
+  name: chatApiVnetName
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        chatApiVnetAddressPrefix
+      ]
+    }
+  }
+}
+
+resource chatApiSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-09-01' = {
+  parent: chatApiVnet
+  name: chatApiSubnetName
+  properties: {
+    addressPrefix: chatApiSubnetAddressPrefix
+    delegations: [
+      {
+        name: 'chatApiDelegation'
+        properties: {
+          serviceName: 'Microsoft.Web/serverFarms'
+        }
+      }
+    ]
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.Storage'
+      }
+    ]
+  }
 }
 
 // search
@@ -160,6 +226,7 @@ resource chatApiFunc 'Microsoft.Web/sites@2024-11-01' = {
   kind: 'functionapp,linux'
   properties: {
     serverFarmId: chatApiAsp.id
+    virtualNetworkSubnetId: chatApiSubnet.id
     functionAppConfig: {
       runtime: { name: 'node', version: '22' }
       scaleAndConcurrency: {
@@ -178,6 +245,7 @@ resource chatApiFunc 'Microsoft.Web/sites@2024-11-01' = {
       }
     }
     siteConfig: {
+      vnetRouteAllEnabled: true
       cors: {
         allowedOrigins: [
           'https://portal.azure.com'
@@ -185,6 +253,8 @@ resource chatApiFunc 'Microsoft.Web/sites@2024-11-01' = {
           'https://${chatWebStapp.properties.defaultHostname}'
         ]
       }
+      ipSecurityRestrictionsDefaultAction: 'Deny'
+      ipSecurityRestrictions: chatApiIpRestrictions
       appSettings: [
         { name: 'AzureWebJobsStorage', value: 'DefaultEndpointsProtocol=https;AccountName=${chatApiSt.name};AccountKey=${chatApiSt.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}' }
         { name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING', value: 'DefaultEndpointsProtocol=https;AccountName=${chatApiSt.name};AccountKey=${chatApiSt.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}' }
