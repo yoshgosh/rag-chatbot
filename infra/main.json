@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "7534431725194731460"
+      "templateHash": "434728438294008141"
     }
   },
   "parameters": {
@@ -129,9 +129,18 @@
         "networkAcls": {
           "bypass": "AzureServices",
           "defaultAction": "Deny",
-          "ipRules": "[variables('storageIpWhitelistRules')]"
+          "ipRules": "[variables('storageIpWhitelistRules')]",
+          "virtualNetworkRules": [
+            {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('chatApiVnetName'), variables('chatApiSubnetName'))]",
+              "action": "Allow"
+            }
+          ]
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('chatApiVnetName'), variables('chatApiSubnetName'))]"
+      ]
     },
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
@@ -166,6 +175,11 @@
             "properties": {
               "serviceName": "Microsoft.App/environments"
             }
+          }
+        ],
+        "serviceEndpoints": [
+          {
+            "service": "Microsoft.Storage"
           }
         ]
       },
@@ -370,33 +384,6 @@
         "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('openaiName'), 'gpt-4.1-mini')]",
         "[resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName'))]",
         "[resourceId('Microsoft.Search/searchServices', variables('searchName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2023-05-01",
-      "name": "[variables('docsStName')]",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard_LRS"
-      },
-      "kind": "StorageV2",
-      "properties": {
-        "networkAcls": {
-          "bypass": "AzureServices",
-          "defaultAction": "Deny",
-          "ipRules": "[variables('storageIpWhitelistRules')]",
-          "resourceAccessRules": [
-            {
-              "tenantId": "[tenant().tenantId]",
-              "resourceId": "[resourceId('Microsoft.Web/sites', variables('chatApiFuncName'))]"
-            }
-          ]
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', variables('chatApiFuncName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('docsStName'))]"
       ]
     },
     {

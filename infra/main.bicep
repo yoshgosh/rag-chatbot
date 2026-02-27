@@ -79,6 +79,12 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
       bypass: 'AzureServices'
       defaultAction: 'Deny'
       ipRules: storageIpWhitelistRules
+      virtualNetworkRules: [
+        {
+          id: chatApiSubnet.id
+          action: 'Allow'
+        }
+      ]
     }
   }
   resource blobServices 'blobServices' existing = {
@@ -114,6 +120,11 @@ resource chatApiSubnet 'Microsoft.Network/virtualNetworks/subnets@2023-09-01' = 
         properties: {
           serviceName: 'Microsoft.App/environments'
         }
+      }
+    ]
+    serviceEndpoints: [
+      {
+        service: 'Microsoft.Storage'
       }
     ]
   }
@@ -255,28 +266,6 @@ resource chatApiFunc 'Microsoft.Web/sites@2024-11-01' = {
         { name: 'AZURE_OPENAI_ENDPOINT', value: openai.properties.endpoint }
         { name: 'AZURE_OPENAI_API_KEY', value: openai.listKeys().key1 }
         { name: 'AZURE_OPENAI_GPT_4_1_MINI_NAME', value: gpt41Mini.name }
-      ]
-    }
-  }
-}
-
-resource docsStNetworkAclUpdate 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: docsSt.name
-  location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    networkAcls: {
-      bypass: 'AzureServices'
-      defaultAction: 'Deny'
-      ipRules: storageIpWhitelistRules
-      resourceAccessRules: [
-        {
-          tenantId: tenant().tenantId
-          resourceId: chatApiFunc.id
-        }
       ]
     }
   }
