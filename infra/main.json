@@ -1,0 +1,447 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "7534431725194731460"
+    }
+  },
+  "parameters": {
+    "organizationName": {
+      "type": "string",
+      "defaultValue": "yosh",
+      "metadata": {
+        "description": "Organization name"
+      }
+    },
+    "projectName": {
+      "type": "string",
+      "defaultValue": "rcb",
+      "metadata": {
+        "description": "Project name"
+      }
+    },
+    "env": {
+      "type": "string",
+      "allowedValues": [
+        "dev",
+        "prd"
+      ],
+      "metadata": {
+        "description": "Deployment environment (dev, prd)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "japaneast",
+      "metadata": {
+        "description": "Resource deployment location"
+      }
+    },
+    "ipWhitelist": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "IP whitelist (CIDR) for inbound access restrictions, e.g. 203.0.113.10/32"
+      }
+    },
+    "chatApiVnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.20.0.0/16",
+      "metadata": {
+        "description": "VNet address prefix for chat-api integration"
+      }
+    },
+    "chatApiSubnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.20.1.0/24",
+      "metadata": {
+        "description": "Subnet address prefix for chat-api integration"
+      }
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "storageIpWhitelist",
+        "count": "[length(parameters('ipWhitelist'))]",
+        "input": "[if(contains(parameters('ipWhitelist')[copyIndex('storageIpWhitelist')], '/'), split(parameters('ipWhitelist')[copyIndex('storageIpWhitelist')], '/')[0], parameters('ipWhitelist')[copyIndex('storageIpWhitelist')])]"
+      },
+      {
+        "name": "storageIpWhitelistRules",
+        "count": "[length(variables('storageIpWhitelist'))]",
+        "input": {
+          "value": "[variables('storageIpWhitelist')[copyIndex('storageIpWhitelistRules')]]"
+        }
+      },
+      {
+        "name": "chatApiIpRestrictions",
+        "count": "[length(parameters('ipWhitelist'))]",
+        "input": {
+          "ipAddress": "[parameters('ipWhitelist')[copyIndex('chatApiIpRestrictions')]]",
+          "action": "Allow",
+          "priority": "[add(100, indexOf(parameters('ipWhitelist'), parameters('ipWhitelist')[copyIndex('chatApiIpRestrictions')]))]",
+          "name": "[format('allow-{0}', replace(replace(parameters('ipWhitelist')[copyIndex('chatApiIpRestrictions')], '.', '-'), '/', '-'))]"
+        }
+      }
+    ],
+    "locationCode": "jpe",
+    "uniqueId": "[uniqueString(resourceGroup().id)]",
+    "shortUniqueId": "[take(variables('uniqueId'), 5)]",
+    "lawName": "[format('law-{0}-{1}-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "docsStName": "[take(format('st{0}{1}docs{2}{3}{4}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'), variables('shortUniqueId')), 24)]",
+    "docsContainerName": "documents",
+    "searchName": "[format('srch-{0}-{1}-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "openaiName": "[format('oai-{0}-{1}-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "chatApiAppiName": "[format('appi-{0}-{1}-chat-api-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "chatApiStName": "[take(format('st{0}{1}capi{2}{3}{4}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'), variables('shortUniqueId')), 24)]",
+    "chatApiContainerName": "api-package",
+    "chatApiAspName": "[format('asp-{0}-{1}-chat-api-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "chatApiFuncName": "[format('func-{0}-{1}-chat-api-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "chatApiVnetName": "[format('vnet-{0}-{1}-chat-api-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]",
+    "chatApiSubnetName": "snet-chat-api",
+    "chatWebName": "[format('stapp-{0}-{1}-chat-web-{2}-{3}', parameters('organizationName'), parameters('projectName'), parameters('env'), variables('locationCode'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('lawName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('docsStName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Deny",
+          "ipRules": "[variables('storageIpWhitelistRules')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', variables('docsStName'), 'default', variables('docsContainerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('docsStName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('chatApiVnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('chatApiVnetAddressPrefix')]"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-09-01",
+      "name": "[format('{0}/{1}', variables('chatApiVnetName'), variables('chatApiSubnetName'))]",
+      "properties": {
+        "addressPrefix": "[parameters('chatApiSubnetAddressPrefix')]",
+        "delegations": [
+          {
+            "name": "chatApiDelegation",
+            "properties": {
+              "serviceName": "Microsoft.App/environments"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('chatApiVnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('searchName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "free"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('openaiName')]",
+      "location": "[parameters('location')]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "S0"
+      },
+      "properties": {
+        "customSubDomainName": "[variables('openaiName')]"
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', variables('openaiName'), 'gpt-4.1-mini')]",
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "gpt-4.1-mini",
+          "version": "2025-04-14"
+        }
+      },
+      "sku": {
+        "name": "GlobalStandard",
+        "capacity": 50
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', variables('openaiName'), 'text-embedding-3-small')]",
+      "properties": {
+        "model": {
+          "format": "OpenAI",
+          "name": "text-embedding-3-small",
+          "version": "1"
+        }
+      },
+      "sku": {
+        "name": "Standard",
+        "capacity": 10
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('openaiName'), 'gpt-4.1-mini')]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('chatApiAppiName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('lawName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('lawName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('chatApiStName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2"
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', variables('chatApiStName'), 'default', variables('chatApiContainerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('chatApiStName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2024-11-01",
+      "name": "[variables('chatApiAspName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp",
+      "sku": {
+        "name": "FC1",
+        "tier": "FlexConsumption"
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2024-11-01",
+      "name": "[variables('chatApiFuncName')]",
+      "location": "[parameters('location')]",
+      "kind": "functionapp,linux",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('chatApiAspName'))]",
+        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('chatApiVnetName'), variables('chatApiSubnetName'))]",
+        "functionAppConfig": {
+          "runtime": {
+            "name": "node",
+            "version": "22"
+          },
+          "scaleAndConcurrency": {
+            "instanceMemoryMB": 512,
+            "maximumInstanceCount": 40
+          },
+          "deployment": {
+            "storage": {
+              "type": "blobcontainer",
+              "value": "[format('{0}{1}', reference(resourceId('Microsoft.Storage/storageAccounts', variables('chatApiStName')), '2023-05-01').primaryEndpoints.blob, variables('chatApiContainerName'))]",
+              "authentication": {
+                "type": "StorageAccountConnectionString",
+                "storageAccountConnectionStringName": "DEPLOYMENT_STORAGE_CONNECTION_STRING"
+              }
+            }
+          }
+        },
+        "siteConfig": {
+          "vnetRouteAllEnabled": true,
+          "cors": {
+            "allowedOrigins": [
+              "https://portal.azure.com",
+              "http://localhost:5173",
+              "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', variables('chatWebName')), '2024-11-01').defaultHostname)]"
+            ]
+          },
+          "ipSecurityRestrictionsDefaultAction": "Deny",
+          "ipSecurityRestrictions": "[variables('chatApiIpRestrictions')]",
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', variables('chatApiStName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('chatApiStName')), '2023-05-01').keys[0].value, environment().suffixes.storage)]"
+            },
+            {
+              "name": "DEPLOYMENT_STORAGE_CONNECTION_STRING",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', variables('chatApiStName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('chatApiStName')), '2023-05-01').keys[0].value, environment().suffixes.storage)]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference(resourceId('Microsoft.Insights/components', variables('chatApiAppiName')), '2020-02-02').ConnectionString]"
+            },
+            {
+              "name": "AZURE_DOCS_STORAGE_CONNECTION_STRING",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', variables('docsStName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('docsStName')), '2023-05-01').keys[0].value, environment().suffixes.storage)]"
+            },
+            {
+              "name": "AZURE_SEARCH_ENDPOINT",
+              "value": "[format('https://{0}.search.windows.net', variables('searchName'))]"
+            },
+            {
+              "name": "AZURE_SEARCH_ADMIN_KEY",
+              "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchName')), '2023-11-01').primaryKey]"
+            },
+            {
+              "name": "AZURE_OPENAI_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName')), '2023-05-01').endpoint]"
+            },
+            {
+              "name": "AZURE_OPENAI_API_KEY",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName')), '2023-05-01').key1]"
+            },
+            {
+              "name": "AZURE_OPENAI_GPT_4_1_MINI_NAME",
+              "value": "gpt-4.1-mini"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('chatApiAppiName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('chatApiAspName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('chatApiStName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('chatApiVnetName'), variables('chatApiSubnetName'))]",
+        "[resourceId('Microsoft.Web/staticSites', variables('chatWebName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('docsStName'))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts/deployments', variables('openaiName'), 'gpt-4.1-mini')]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('docsStName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Deny",
+          "ipRules": "[variables('storageIpWhitelistRules')]",
+          "resourceAccessRules": [
+            {
+              "tenantId": "[tenant().tenantId]",
+              "resourceId": "[resourceId('Microsoft.Web/sites', variables('chatApiFuncName'))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('chatApiFuncName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('docsStName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2024-11-01",
+      "name": "[variables('chatWebName')]",
+      "location": "eastasia",
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      },
+      "properties": {
+        "stagingEnvironmentPolicy": "Enabled",
+        "allowConfigFileUpdates": true
+      }
+    }
+  ],
+  "outputs": {
+    "chatApiFuncName": {
+      "type": "string",
+      "value": "[variables('chatApiFuncName')]"
+    },
+    "searchName": {
+      "type": "string",
+      "value": "[variables('searchName')]"
+    },
+    "openaiName": {
+      "type": "string",
+      "value": "[variables('openaiName')]"
+    },
+    "textEmbedding3SmallName": {
+      "type": "string",
+      "value": "text-embedding-3-small"
+    },
+    "docsStName": {
+      "type": "string",
+      "value": "[variables('docsStName')]"
+    },
+    "chatWebStappName": {
+      "type": "string",
+      "value": "[variables('chatWebName')]"
+    },
+    "chatApiDefaultHostName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', variables('chatApiFuncName')), '2024-11-01').defaultHostName]"
+    }
+  }
+}
