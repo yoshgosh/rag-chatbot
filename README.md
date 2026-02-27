@@ -1,6 +1,9 @@
 # rag-chatbot
 
-Azure Static Web Apps + Azure Functions + Azure OpenAI + Azure AI Search で構築された RAG チャットボットです。GitHub Actions による CI/CD が含まれています。
+Azure Static Web Apps + Azure Functions + Azure OpenAI + Azure AI Search で構築された RAG チャットボットです。
+
+Azure Bicep による IaC 及び GitHub Actions による CI/CD が含まれています。
+
 ![Demo](images/demo.png)
 
 ## システム構成
@@ -50,7 +53,7 @@ flowchart LR
     ├── main.bicep               # Azure リソースの定義
     └── params/                  # 環境別パラメータ
 ```
-各サービス・インフラの詳細は `apps/`、`infra/` 以下の README.md を参照してください。
+詳細は `apps/`、`infra/` 以下の README.md を参照してください。
 
 ## CI/CD
 
@@ -80,7 +83,7 @@ flowchart LR
     
 1. リソースグループの作成
     - リソースグループを作成
-    - 補足：`<resourceGroupName>` は `rg-yosh-rcb-dev-jpe` のように命名する。
+    - 補足：`<resourceGroupName>` は `rg-yosh-rcb-dev-jpe` のように命名するとよい。
     - `resourceGroupName` をメモする。
     
     ```bash
@@ -89,7 +92,7 @@ flowchart LR
     
 1. アプリの作成
     - アプリを作成
-    - 補足：`<displayName>` は `gh-actions-yosh-rcb-dev-jpe` のように命名する。
+    - 補足：`<displayName>` は `gh-actions-yosh-rcb-dev-jpe` のように命名するとよい。
     - 出力から `appId` をメモする。
     
     ```bash
@@ -139,7 +142,7 @@ flowchart LR
     - variables
         
         ```bash
-        RESOURCE_GROUP_NAME=<resourceGroupName>
+        AZURE_RESOURCE_GROUP_NAME=<resourceGroupName>
         ```
         
 
