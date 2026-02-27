@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.39.26.7824",
-      "templateHash": "6518546942548171070"
+      "templateHash": "11884452694884486772"
     }
   },
   "parameters": {
@@ -249,7 +249,7 @@
       },
       "sku": {
         "name": "GlobalStandard",
-        "capacity": 50
+        "capacity": 1
       },
       "dependsOn": [
         "[resourceId('Microsoft.CognitiveServices/accounts', variables('openaiName'))]"
