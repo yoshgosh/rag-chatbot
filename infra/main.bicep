@@ -97,7 +97,7 @@ resource gpt41Mini 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01'
   }
   sku: {
     name: 'GlobalStandard'
-    capacity: 50
+    capacity: 10
   }
 }
 
