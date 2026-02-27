@@ -23,7 +23,8 @@ param chatApiSubnetAddressPrefix string = '10.20.1.0/24'
 
 var uniqueId = uniqueString(resourceGroup().id)
 var shortUniqueId = take(uniqueId, 5)
-var ipWhitelistRules = [for ip in ipWhitelist: {
+var storageIpWhitelist = [for ip in ipWhitelist: contains(ip, '/') ? split(ip, '/')[0] : ip]
+var storageIpWhitelistRules = [for ip in storageIpWhitelist: {
   value: ip
 }]
 var chatApiIpRestrictions = [for ip in ipWhitelist: {
@@ -77,7 +78,7 @@ resource docsSt 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     networkAcls: {
       bypass: 'AzureServices'
       defaultAction: 'Deny'
-      ipRules: ipWhitelistRules
+      ipRules: storageIpWhitelistRules
       virtualNetworkRules: [
         {
           id: chatApiSubnet.id
